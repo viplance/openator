@@ -1,0 +1,15 @@
+{
+  "name": "openator",
+  "version": "1.0.0",
+  "private": true,
+  "description": "macOS toolbar app that routes URLs to different browsers based on rules.",
+  "scripts": {
+    "build": "node ./scripts/build.mjs",
+    "dev": "node ./scripts/start.mjs",
+    "start": "node ./scripts/start.mjs",
+    "clean": "swift package clean && rm -rf .build dist",
+    "icon": "swift tools/generate_app_icon.swift"
+  },
+  "author": "Dzmitry Sharko",
+  "license": "GPL-3.0-or-later"
+}
