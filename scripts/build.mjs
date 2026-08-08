@@ -13,6 +13,7 @@ const macOSDir = join(appContents, "MacOS");
 const resourcesDir = join(appContents, "Resources");
 const swiftBinary = join(root, ".build", "release", appName);
 const appBinary = join(macOSDir, appName);
+const entitlements = join(root, "Openator.entitlements");
 const signingIdentity = "Developer ID Application: Dzmitry Sharko (W37L5728Y6)";
 
 function run(command, args, options = {}) {
@@ -59,6 +60,9 @@ console.log(`Signing with: ${signingIdentity}`);
 await run("codesign", [
   "--force",
   "--deep",
+  "--options", "runtime",
+  "--entitlements",
+  entitlements,
   "--sign",
   signingIdentity,
   appBundle,

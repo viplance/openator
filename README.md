@@ -54,5 +54,26 @@ Rules are evaluated in order. The first match wins. If no rule matches, the URL 
 | `pnpm build` | Build release binary, assemble `.app` bundle, sign with Developer ID |
 | `pnpm start` | Build and launch |
 | `pnpm dev` | Alias for `pnpm start` |
-| `pnpm icon` | Regenerate the app icon |
+| `pnpm icon` | Regenerate all icon assets (icns, xcassets, App Store marketing icon) |
 | `pnpm clean` | Remove `.build/` and `dist/` |
+
+## App Store
+
+### Generated assets
+
+`pnpm icon` produces everything needed for App Store submission:
+
+| Path | Purpose |
+|---|---|
+| `assets/icon.icns` | App bundle icon |
+| `assets/AppStore-1024x1024.png` | Marketing icon for App Store Connect |
+| `Assets.xcassets/AppIcon.appiconset/` | Full asset catalog with all sizes (16–1024px) |
+
+### Publishing checklist
+
+1. Create an **Apple Distribution** certificate in [Apple Developer portal](https://developer.apple.com/account/resources/certificates)
+2. Create an App ID for `com.openator.app` and a provisioning profile
+3. Build and sign with the distribution certificate
+4. Upload to App Store Connect via Xcode or Transporter
+5. Add screenshots (macOS: 2560x1600 or 2880x1800) in App Store Connect
+6. Submit for review
