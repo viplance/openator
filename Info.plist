@@ -17,7 +17,7 @@
   <key>CFBundleShortVersionString</key>
   <string>1.0.0</string>
   <key>CFBundleVersion</key>
-  <string>1</string>
+  <string>5</string>
   <key>LSMinimumSystemVersion</key>
   <string>13.0</string>
   <key>LSUIElement</key>
@@ -47,6 +47,8 @@
       <string>HTML Document</string>
       <key>CFBundleTypeRole</key>
       <string>Viewer</string>
+      <key>LSHandlerRank</key>
+      <string>Alternate</string>
       <key>LSItemContentTypes</key>
       <array>
         <string>public.html</string>
