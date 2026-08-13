@@ -43,18 +43,24 @@ final class BrowserManager {
             .name ?? bundleId
     }
 
-    func openURL(_ url: URL, withBrowser bundleId: String) {
-        let appURL: URL
-        if let found = NSWorkspace.shared.urlForApplication(withBundleIdentifier: bundleId) {
-            appURL = found
-        } else if let safari = NSWorkspace.shared.urlForApplication(
-            withBundleIdentifier: "com.apple.Safari"
-        ) {
-            appURL = safari
-        } else {
-            return
+    @discardableResult
+    func openURL(_ url: URL, withBrowser bundleId: String) -> Bool {
+        guard let appURL = NSWorkspace.shared.urlForApplication(
+            withBundleIdentifier: bundleId
+        ) else {
+            NSLog("Openator: configured browser is unavailable: \(bundleId)")
+            return false
         }
         let config = NSWorkspace.OpenConfiguration()
-        NSWorkspace.shared.open([url], withApplicationAt: appURL, configuration: config)
+        NSWorkspace.shared.open(
+            [url],
+            withApplicationAt: appURL,
+            configuration: config
+        ) { _, error in
+            if let error {
+                NSLog("Openator: failed to open URL with \(bundleId): \(error)")
+            }
+        }
+        return true
     }
 }

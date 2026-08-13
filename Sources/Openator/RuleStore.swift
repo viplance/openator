@@ -24,8 +24,30 @@ final class RuleStore {
     }
 
     func matchingRule(for url: URL) -> URLRule? {
-        let s = url.absoluteString.lowercased()
-        return rules.first { s.contains($0.urlContains.lowercased()) }
+        let candidates = Self.matchCandidates(for: url)
+        return rules.first { rule in
+            let pattern = rule.urlContains
+                .trimmingCharacters(in: .whitespacesAndNewlines)
+                .lowercased()
+            return !pattern.isEmpty && candidates.contains { $0.contains(pattern) }
+        }
+    }
+
+    /// Match both the URL delivered by LaunchServices and URLs embedded in redirect
+    /// wrappers (Slack, mail clients, and trackers commonly percent-encode them).
+    static func matchCandidates(for url: URL) -> [String] {
+        var candidates: [String] = []
+        var candidate = url.absoluteString.lowercased()
+
+        for _ in 0..<3 {
+            if !candidates.contains(candidate) {
+                candidates.append(candidate)
+            }
+            guard let decoded = candidate.removingPercentEncoding?.lowercased(),
+                  decoded != candidate else { break }
+            candidate = decoded
+        }
+        return candidates
     }
 
     func addRule(_ rule: URLRule) {

@@ -17,6 +17,10 @@ let package = Package(
                 .linkedFramework("AppKit"),
                 .linkedFramework("CoreServices")
             ]
+        ),
+        .testTarget(
+            name: "OpenatorTests",
+            dependencies: ["Openator"]
         )
     ]
 )

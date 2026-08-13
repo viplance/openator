@@ -10,6 +10,27 @@ const appName = "Openator";
 const appBundle = join(root, "dist", `${appName}.app`);
 const execFileAsync = promisify(execFile);
 
+async function runningPids() {
+  try {
+    const { stdout } = await execFileAsync("pgrep", [
+      "-f",
+      "Openator.app/Contents/MacOS/Openator",
+    ]);
+    return stdout.trim().split("\n").filter(Boolean);
+  } catch {
+    return [];
+  }
+}
+
+async function waitForExit(timeoutMs = 5000) {
+  const deadline = Date.now() + timeoutMs;
+  while (Date.now() < deadline) {
+    if ((await runningPids()).length === 0) return;
+    await new Promise((resolvePromise) => setTimeout(resolvePromise, 100));
+  }
+  throw new Error("Timed out waiting for the previous Openator process to exit");
+}
+
 function runNode(scriptPath) {
   return new Promise((resolvePromise, reject) => {
     const child = spawn(process.execPath, [scriptPath], {
@@ -29,10 +50,9 @@ function runNode(scriptPath) {
 async function main() {
   console.log("\n=== Openator: start ===\n");
 
-  console.log("1) Building…");
-  await runNode(join(root, "scripts", "build.mjs"));
-
-  console.log("\n2) Stopping any running instance…");
+  // Never replace the bundle underneath a running process. LaunchServices can
+  // otherwise keep talking to the unlinked, stale executable for days.
+  console.log("1) Stopping any running instance…");
   try {
     await execFileAsync("pkill", [
       "-f",
@@ -41,6 +61,10 @@ async function main() {
   } catch {
     // pkill returns 1 if no process matched
   }
+  await waitForExit();
+
+  console.log("\n2) Building…");
+  await runNode(join(root, "scripts", "build.mjs"));
 
   try {
     await access(appBundle);

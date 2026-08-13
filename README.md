@@ -77,3 +77,7 @@ Rules are evaluated in order. The first match wins. If no rule matches, the URL 
 4. Upload to App Store Connect via Xcode or Transporter
 5. Add screenshots (macOS: 2560x1600 or 2880x1800) in App Store Connect
 6. Submit for review
+
+`Openator.entitlements` is the App Store entitlement set and must be paired with
+the App Store provisioning profile. The local `pnpm build` Developer ID flow uses
+`Openator.DeveloperID.entitlements` instead.

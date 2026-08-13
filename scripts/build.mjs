@@ -1,4 +1,4 @@
-import { mkdir, rm, cp, readFile, writeFile, chmod, access } from "node:fs/promises";
+import { mkdir, rm, cp, chmod, access, rename } from "node:fs/promises";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { spawn } from "node:child_process";
@@ -8,12 +8,16 @@ const root = resolve(__dirname, "..");
 const distRoot = join(root, "dist");
 const appName = "Openator";
 const appBundle = join(distRoot, `${appName}.app`);
-const appContents = join(appBundle, "Contents");
+const stagedAppBundle = join(distRoot, `${appName}.app.building`);
+const appContents = join(stagedAppBundle, "Contents");
 const macOSDir = join(appContents, "MacOS");
 const resourcesDir = join(appContents, "Resources");
 const swiftBinary = join(root, ".build", "release", appName);
 const appBinary = join(macOSDir, appName);
-const entitlements = join(root, "Openator.entitlements");
+// Developer ID builds do not carry an App Store provisioning profile. Keep
+// their entitlements separate from Openator.entitlements, which is used for
+// App Store distribution and includes profile-backed identifiers.
+const entitlements = join(root, "Openator.DeveloperID.entitlements");
 const signingIdentity = "Developer ID Application: Dzmitry Sharko (W37L5728Y6)";
 
 function run(command, args, options = {}) {
@@ -32,7 +36,7 @@ function run(command, args, options = {}) {
 }
 
 await mkdir(distRoot, { recursive: true });
-await rm(appBundle, { recursive: true, force: true });
+await rm(stagedAppBundle, { recursive: true, force: true });
 
 console.log("Building Swift release binary...");
 await run("swift", ["build", "-c", "release"]);
@@ -65,7 +69,11 @@ await run("codesign", [
   entitlements,
   "--sign",
   signingIdentity,
-  appBundle,
+  stagedAppBundle,
 ]);
+
+// Publish only a fully assembled and signed bundle.
+await rm(appBundle, { recursive: true, force: true });
+await rename(stagedAppBundle, appBundle);
 
 console.log(`Done. App bundle: ${appBundle}`);

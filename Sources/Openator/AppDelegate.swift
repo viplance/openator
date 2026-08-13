@@ -91,13 +91,22 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         else { return }
 
         let browserId: String
+        let matchedPattern: String
         if let rule = RuleStore.shared.matchingRule(for: url) {
             browserId = rule.browserBundleId
+            matchedPattern = rule.urlContains
         } else {
             browserId = UserDefaults.standard.string(forKey: "defaultBrowserId")
                 ?? "com.apple.Safari"
+            matchedPattern = "<fallback>"
         }
-        BrowserManager.shared.openURL(url, withBrowser: browserId)
+
+        NSLog("Openator: route matched \(matchedPattern) -> \(browserId)")
+        if !BrowserManager.shared.openURL(url, withBrowser: browserId),
+           browserId.caseInsensitiveCompare("com.apple.Safari") != .orderedSame {
+            NSLog("Openator: falling back to Safari because \(browserId) is unavailable")
+            BrowserManager.shared.openURL(url, withBrowser: "com.apple.Safari")
+        }
     }
 
     // MARK: - Menu

@@ -43,9 +43,16 @@ final class RuleEditorPanel {
             popup.addItem(withTitle: b.name)
             popup.lastItem?.representedObject = b.bundleId
         }
-        if let r = rule,
-           let idx = browsers.firstIndex(where: { $0.bundleId == r.browserBundleId }) {
-            popup.selectItem(at: idx)
+        if let r = rule {
+            if let idx = browsers.firstIndex(where: {
+                $0.bundleId.caseInsensitiveCompare(r.browserBundleId) == .orderedSame
+            }) {
+                popup.selectItem(at: idx)
+            } else {
+                popup.addItem(withTitle: "Unavailable browser (\(r.browserBundleId))")
+                popup.lastItem?.representedObject = r.browserBundleId
+                popup.selectItem(at: popup.numberOfItems - 1)
+            }
         }
         cv.addSubview(popup)
 
@@ -103,7 +110,7 @@ private final class ModalHandler: NSObject, NSWindowDelegate {
     }
 
     @objc func doSave() {
-        let pattern = urlField.stringValue.trimmingCharacters(in: .whitespaces)
+        let pattern = urlField.stringValue.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !pattern.isEmpty else {
             NSSound.beep()
             panel.makeFirstResponder(urlField)
