@@ -1,8 +1,13 @@
 import AppKit
 import CoreServices
+import OSLog
 import ServiceManagement
 
 final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
+    private let routingLogger = Logger(
+        subsystem: Bundle.main.bundleIdentifier ?? "com.openator.app",
+        category: "Routing"
+    )
     private let statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
     private let menu = NSMenu()
 
@@ -90,6 +95,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
               let url = URL(string: urlString)
         else { return }
 
+        let candidates = RuleStore.matchCandidates(for: url)
+        let configuredRules = RuleStore.shared.rules.map {
+            "\($0.urlContains) -> \($0.browserBundleId)"
+        }
+        routingLogger.info("Received URL: \(url.absoluteString, privacy: .public)")
+        routingLogger.info("Match candidates: \(candidates.description, privacy: .public)")
+        routingLogger.info("Configured rules: \(configuredRules.description, privacy: .public)")
+
         let browserId: String
         let matchedPattern: String
         if let rule = RuleStore.shared.matchingRule(for: url) {
@@ -101,10 +114,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             matchedPattern = "<fallback>"
         }
 
-        NSLog("Openator: route matched \(matchedPattern) -> \(browserId)")
+        routingLogger.info(
+            "Selected route: \(matchedPattern, privacy: .public) -> \(browserId, privacy: .public)"
+        )
         if !BrowserManager.shared.openURL(url, withBrowser: browserId),
            browserId.caseInsensitiveCompare("com.apple.Safari") != .orderedSame {
-            NSLog("Openator: falling back to Safari because \(browserId) is unavailable")
+            routingLogger.error(
+                "Falling back to Safari because \(browserId, privacy: .public) is unavailable"
+            )
             BrowserManager.shared.openURL(url, withBrowser: "com.apple.Safari")
         }
     }

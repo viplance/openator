@@ -1,4 +1,5 @@
 import AppKit
+import OSLog
 
 struct BrowserInfo {
     let bundleId: String
@@ -7,6 +8,10 @@ struct BrowserInfo {
 
 final class BrowserManager {
     static let shared = BrowserManager()
+    private let routingLogger = Logger(
+        subsystem: Bundle.main.bundleIdentifier ?? "com.openator.app",
+        category: "Routing"
+    )
     private var cached: [BrowserInfo]?
 
     func availableBrowsers() -> [BrowserInfo] {
@@ -48,9 +53,14 @@ final class BrowserManager {
         guard let appURL = NSWorkspace.shared.urlForApplication(
             withBundleIdentifier: bundleId
         ) else {
-            NSLog("Openator: configured browser is unavailable: \(bundleId)")
+            routingLogger.error(
+                "Browser unavailable: \(bundleId, privacy: .public)"
+            )
             return false
         }
+        routingLogger.info(
+            "Opening with \(bundleId, privacy: .public) at \(appURL.path, privacy: .public)"
+        )
         let config = NSWorkspace.OpenConfiguration()
         NSWorkspace.shared.open(
             [url],
@@ -58,7 +68,13 @@ final class BrowserManager {
             configuration: config
         ) { _, error in
             if let error {
-                NSLog("Openator: failed to open URL with \(bundleId): \(error)")
+                self.routingLogger.error(
+                    "Open failed for \(bundleId, privacy: .public): \(error.localizedDescription, privacy: .public)"
+                )
+            } else {
+                self.routingLogger.info(
+                    "Open completed for \(bundleId, privacy: .public)"
+                )
             }
         }
         return true
