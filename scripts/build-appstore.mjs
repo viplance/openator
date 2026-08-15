@@ -74,7 +74,24 @@ try {
 // Embed provisioning profile (required for App Store)
 await cp(provisioningProfile, join(appContents, "embedded.provisionprofile"));
 
-console.log(`\n3) Signing with: ${signingIdentity}`);
+console.log("\n3) Compiling asset catalog...");
+await run("xcrun", [
+  "actool",
+  join(root, "Assets.xcassets"),
+  "--compile", resourcesDir,
+  "--platform", "macosx",
+  "--minimum-deployment-target", "13.0",
+  "--app-icon", "AppIcon",
+  "--output-partial-info-plist", join(distRoot, "partial-info.plist"),
+]);
+
+// actool overwrites AppIcon.icns with an incomplete version — restore the full one
+await cp(iconPath, join(resourcesDir, "AppIcon.icns"));
+
+console.log("\n4) Stripping extended attributes...");
+await run("xattr", ["-cr", stagedAppBundle]);
+
+console.log(`\n5) Signing with: ${signingIdentity}`);
 await run("codesign", [
   "--force",
   "--deep",
@@ -88,10 +105,13 @@ await run("codesign", [
 await rm(appBundle, { recursive: true, force: true });
 await rename(stagedAppBundle, appBundle);
 
-console.log("\n4) Verifying signature...");
+console.log("\n6) Verifying signature...");
 await run("codesign", ["--verify", "--deep", "--strict", appBundle]);
 
-console.log(`\n5) Building installer package with: ${installerIdentity}`);
+console.log("\n7) Verifying entitlements...");
+await run("codesign", ["-d", "--entitlements", "-", appBundle]);
+
+console.log(`\n8) Building installer package with: ${installerIdentity}`);
 await rm(pkgPath, { force: true });
 await run("productbuild", [
   "--component", appBundle, "/Applications",
