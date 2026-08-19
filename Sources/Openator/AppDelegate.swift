@@ -1,13 +1,8 @@
 import AppKit
 import CoreServices
-import OSLog
 import ServiceManagement
 
 final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
-    private let routingLogger = Logger(
-        subsystem: Bundle.main.bundleIdentifier ?? "com.openator.app",
-        category: "Routing"
-    )
     private let statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
     private let menu = NSMenu()
 
@@ -95,33 +90,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
               let url = URL(string: urlString)
         else { return }
 
-        let candidates = RuleStore.matchCandidates(for: url)
-        let configuredRules = RuleStore.shared.rules.map {
-            "\($0.urlContains) -> \($0.browserBundleId)"
-        }
-        routingLogger.info("Received URL: \(url.absoluteString, privacy: .public)")
-        routingLogger.info("Match candidates: \(candidates.description, privacy: .public)")
-        routingLogger.info("Configured rules: \(configuredRules.description, privacy: .public)")
-
         let browserId: String
-        let matchedPattern: String
         if let rule = RuleStore.shared.matchingRule(for: url) {
             browserId = rule.browserBundleId
-            matchedPattern = rule.urlContains
         } else {
             browserId = UserDefaults.standard.string(forKey: "defaultBrowserId")
                 ?? "com.apple.Safari"
-            matchedPattern = "<fallback>"
         }
 
-        routingLogger.info(
-            "Selected route: \(matchedPattern, privacy: .public) -> \(browserId, privacy: .public)"
-        )
         if !BrowserManager.shared.openURL(url, withBrowser: browserId),
            browserId.caseInsensitiveCompare("com.apple.Safari") != .orderedSame {
-            routingLogger.error(
-                "Falling back to Safari because \(browserId, privacy: .public) is unavailable"
-            )
             BrowserManager.shared.openURL(url, withBrowser: "com.apple.Safari")
         }
     }
@@ -248,9 +226,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             } else {
                 try SMAppService.mainApp.register()
             }
-        } catch {
-            NSLog("Openator: launch-at-login toggle failed: \(error)")
-        }
+        } catch {}
     }
 
     @objc private func addRule() {
